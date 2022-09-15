@@ -8,10 +8,8 @@ import androidx.annotation.RequiresApi
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.plugins.FlutterPlugin
-import io.flutter.plugin.common.EventChannel
-import io.flutter.plugin.common.EventChannel.EventSink
 import io.flutter.plugin.common.MethodChannel
-
+import io.flutter.plugin.common.EventChannel
 
 class MainActivity: FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -31,7 +29,8 @@ class MainActivity: FlutterActivity() {
                     result.notImplemented()
                 }
             }
-        EventChannel(flutterEngine.dartExecutor.binaryMessenger, "my_app/event/battery").setStreamHandler(BatteryLevelEventChannel(context))
+        EventChannel(flutterEngine.dartExecutor.binaryMessenger, "my_app/event/battery")
+            .setStreamHandler(BatteryLevelEventChannel(context))
     }
 
     private fun getBatteryLevel(): Int {
@@ -45,35 +44,5 @@ class MainActivity: FlutterActivity() {
         }
 
         return batteryLevel
-    }
-}
-
-class BatteryLevelEventChannel(context: Context): EventChannel.StreamHandler {
-    private var chargingStateChangeReceiver: BroadcastReceiver? = null
-    private var applicationContext: Context = context
-
-
-
-    override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-        chargingStateChangeReceiver = createChargingStateChangeReceiver(events!!)
-        applicationContext.registerReceiver(
-            chargingStateChangeReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED)
-        )
-    }
-
-    override fun onCancel(arguments: Any?) {
-        applicationContext.unregisterReceiver(chargingStateChangeReceiver)
-        chargingStateChangeReceiver = null
-    }
-
-    private fun createChargingStateChangeReceiver(events: EventSink): BroadcastReceiver? {
-        return object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
-                val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
-                val batteryPct = level * 100 / scale.toFloat()
-                events.success(batteryPct);
-            }
-        }
     }
 }
